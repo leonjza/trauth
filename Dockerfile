@@ -14,4 +14,6 @@ COPY --from=build /src/trauth /
 
 VOLUME ["/config"]
 
+EXPOSE 8080
+
 ENTRYPOINT ["/trauth"]
