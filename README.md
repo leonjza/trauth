@@ -10,7 +10,7 @@ Unlike other ForwardAuth projects that enable neat OpenID / OAuth flows, `trauth
 
 An example `docker-compose.yml` is included to show how to get it up and running. It assumes that `htpass` is mounted externally.
 
-Of course, you could compile from source and run outside of docker too.
+Of course, you could compile from source or download from the [releases](https://github.com/leonjza/trauth/releases) page and run outside of docker too.
 
 ## setup
 
