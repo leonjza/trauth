@@ -38,16 +38,8 @@ func getUser(s *sessions.Session) User {
 
 func check(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := store.Get(r, cookieName)
-		if err != nil {
-			log.Printf("failed to read session cookie info with: %s\n", err)
-			http.Error(w, `Internal Error`, http.StatusInternalServerError)
-			return
-		}
-
+		session, _ := store.Get(r, cookieName)
 		user := getUser(session)
-
-		log.Printf("authenticated user %s => %t\n", user.Username, user.Authenticated)
 
 		if auth := user.Authenticated; !auth {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
@@ -69,7 +61,7 @@ func check(next http.Handler) http.Handler {
 				Username:      user,
 				Authenticated: true,
 			}
-			if err = session.Save(r, w); err != nil {
+			if err := session.Save(r, w); err != nil {
 				log.Fatalf("failed to save session data with: %s\n", err)
 			}
 
