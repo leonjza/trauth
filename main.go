@@ -63,6 +63,7 @@ func check(next http.Handler) http.Handler {
 				Value:    sessionID,
 				Expires:  time.Now().Add(365 * 24 * time.Hour),
 				Domain:   domain,
+				Path:     `/`,
 				HttpOnly: true,
 			}
 			http.SetCookie(w, &cookie)
