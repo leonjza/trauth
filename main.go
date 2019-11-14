@@ -65,16 +65,21 @@ func check(next http.Handler) http.Handler {
 				Expires:  time.Now().Add(365 * 24 * time.Hour),
 				Domain:   domain,
 				HttpOnly: true,
-				Path:     `/`,
-				SameSite: 1,
 			}
 			http.SetCookie(w, &cookie)
 			sessionCookies[user] = sessionID
 
-			// back to where we came from
-			log.Printf("authenticated %s from %s using basic auth, redirecting back to %s",
-				user, r.RemoteAddr, `foo`)
-			http.Redirect(w, r, `http://www.google.com/`, http.StatusSeeOther)
+			// this just redirects to the auth server for now :/
+			// was hoping for a referrer or something. oh well.
+			newDestination := fmt.Sprintf("%s://%s:%s%s",
+				r.Header.Get("X-Forwarded-Proto"),
+				r.Header.Get("X-Forwarded-Host"),
+				r.Header.Get("X-Forwarded-Port"),
+				r.Header.Get("X-Forwarded-URI"))
+			log.Printf("authenticated %s from %s using basic auth, redirecting to %s",
+				user, r.RemoteAddr, newDestination)
+
+			http.Redirect(w, r, newDestination, http.StatusFound)
 			return
 		}
 
@@ -84,7 +89,7 @@ func check(next http.Handler) http.Handler {
 
 // Ok returns an OK
 func Ok(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "hello, %s!", userName)
+	fmt.Fprintf(w, "hello, %s. you should now be authenticated for %s!", userName, domain)
 }
 
 func parseEnv() error {
