@@ -1,54 +1,55 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
 	htpasswd "github.com/tg123/go-htpasswd"
 )
 
-var userName string
 var serverPort string
 var domain string
 var cookieName string
 var passwordFileLocation string
-
-var sessionCookies = make(map[string]string)
 var passwordFile *htpasswd.File
+var store *sessions.CookieStore
 
-func haveAuthCookie(r *http.Request) bool {
-	c, err := r.Cookie(cookieName)
-	if err != nil {
-		log.Printf("%s cookie read error from %s: %s\n", cookieName, r.RemoteAddr, err)
-		return false
+// User holds a users account information
+type User struct {
+	Username      string
+	Authenticated bool
+}
+
+func getUser(s *sessions.Session) User {
+	val := s.Values["user"]
+	var user = User{}
+	user, ok := val.(User)
+	if !ok {
+		return User{Authenticated: false}
 	}
-
-	log.Printf("We have a cookie: %s\n", c.Value)
-
-	for k, v := range sessionCookies {
-		if c.Value == v {
-			userName = k
-			return true
-		}
-	}
-
-	log.Printf("Cookie %s was not found in valid sessions\n", c.Value)
-	log.Printf("Valid sessions are:\n")
-	for _, v := range sessionCookies {
-		log.Printf("Session: %s\n", v)
-	}
-
-	return false
+	return user
 }
 
 func check(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !haveAuthCookie(r) {
+		session, err := store.Get(r, cookieName)
+		if err != nil {
+			log.Printf("failed to read session cookie info with: %s\n", err)
+			http.Error(w, `Internal Error`, http.StatusInternalServerError)
+			return
+		}
+
+		user := getUser(session)
+
+		log.Printf("authenticated user %s => %t\n", user.Username, user.Authenticated)
+
+		if auth := user.Authenticated; !auth {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			user, pass, ok := r.BasicAuth()
 
@@ -64,18 +65,13 @@ func check(next http.Handler) http.Handler {
 				return
 			}
 
-			// add a new session
-			sessionID := uuid.New().String()
-			cookie := http.Cookie{
-				Name:    cookieName,
-				Value:   sessionID,
-				Expires: time.Now().Add(365 * 24 * time.Hour),
-				Domain:  domain,
-				// Path:     `/`,
-				HttpOnly: true,
+			session.Values["user"] = &User{
+				Username:      user,
+				Authenticated: true,
 			}
-			http.SetCookie(w, &cookie)
-			sessionCookies[user] = sessionID
+			if err = session.Save(r, w); err != nil {
+				log.Fatalf("failed to save session data with: %s\n", err)
+			}
 
 			newDestination := fmt.Sprintf("%s://%s:%s%s",
 				r.Header.Get("X-Forwarded-Proto"),
@@ -95,7 +91,15 @@ func check(next http.Handler) http.Handler {
 
 // Ok returns an OK
 func Ok(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "hello, %s. you should now be authenticated for %s!", userName, domain)
+	session, err := store.Get(r, cookieName)
+	if err != nil {
+		log.Printf("failed to read session cookie info with: %s\n", err)
+		http.Error(w, `Internal Error`, http.StatusInternalServerError)
+		return
+	}
+
+	user := getUser(session)
+	fmt.Fprintf(w, "hello, %s. you should now be authenticated for %s!", user.Username, domain)
 }
 
 func parseEnv() error {
@@ -129,6 +133,19 @@ func main() {
 	if err := parseEnv(); err != nil {
 		log.Fatalf("failed parsing environment: %s", err)
 	}
+
+	log.Printf("initializing cookie keys and options...")
+	authKeyOne := securecookie.GenerateRandomKey(64)
+	encryptionKeyOne := securecookie.GenerateRandomKey(32)
+	store = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
+	store.Options = &sessions.Options{
+		Domain:   domain,
+		MaxAge:   ((60 * 60) * 24) * 365, // ((h) d) y
+		HttpOnly: true,
+	}
+
+	// register the User type fro getUser()
+	gob.Register(User{})
 
 	// read the password file
 	log.Printf("reading password file at %s...\n", passwordFileLocation)
