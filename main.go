@@ -28,11 +28,19 @@ func haveAuthCookie(r *http.Request) bool {
 		return false
 	}
 
+	log.Printf("We have a cookie: %s\n", c.Value)
+
 	for k, v := range sessionCookies {
 		if c.Value == v {
 			userName = k
 			return true
 		}
+	}
+
+	log.Printf("Cookie %s was not found in valid sessions\n", c.Value)
+	log.Printf("Valid sessions are:\n")
+	for _, v := range sessionCookies {
+		log.Printf("Session: %s\n", v)
 	}
 
 	return false
@@ -59,18 +67,16 @@ func check(next http.Handler) http.Handler {
 			// add a new session
 			sessionID := uuid.New().String()
 			cookie := http.Cookie{
-				Name:     cookieName,
-				Value:    sessionID,
-				Expires:  time.Now().Add(365 * 24 * time.Hour),
-				Domain:   domain,
-				Path:     `/`,
+				Name:    cookieName,
+				Value:   sessionID,
+				Expires: time.Now().Add(365 * 24 * time.Hour),
+				Domain:  domain,
+				// Path:     `/`,
 				HttpOnly: true,
 			}
 			http.SetCookie(w, &cookie)
 			sessionCookies[user] = sessionID
 
-			// this just redirects to the auth server for now :/
-			// was hoping for a referrer or something. oh well.
 			newDestination := fmt.Sprintf("%s://%s:%s%s",
 				r.Header.Get("X-Forwarded-Proto"),
 				r.Header.Get("X-Forwarded-Host"),
