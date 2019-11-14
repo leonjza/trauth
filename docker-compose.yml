@@ -3,6 +3,9 @@ services:
   nutstat:
     image: trauth
     container_name: trauth
+    environment:
+      - TRAUTH_DOMAIN=yourdomain.local
+      - TRAUTH_PASSWORD_FILE_LOCATION=/config/htpass
     volumes:
       - ./htpass:/config/htpass
     restart: unless-stopped

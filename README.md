@@ -18,7 +18,7 @@ Depending on your setup, a few environment variables must be configured. For a d
 
 ```yml
 environment:
-    - TRAUTH_DOMAIN=internal.theninjabag.net
+    - TRAUTH_DOMAIN=yourdomain.local
     - TRAUTH_PASSWORD_FILE_LOCATION=/config/htpass
 ```
 
