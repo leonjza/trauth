@@ -1,0 +1,8 @@
+version: "3"
+services:
+  nutstat:
+    image: trauth
+    container_name: trauth
+    volumes:
+      - ./htpass:/config/htpass
+    restart: unless-stopped

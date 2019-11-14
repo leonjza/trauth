@@ -20,7 +20,6 @@ var passwordFileLocation string
 
 var sessionCookies = make(map[string]string)
 var passwordFile *htpasswd.File
-var version string
 
 func haveAuthCookie(r *http.Request) bool {
 	c, err := r.Cookie(cookieName)
