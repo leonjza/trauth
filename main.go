@@ -136,7 +136,7 @@ func main() {
 		HttpOnly: true,
 	}
 
-	// register the User type fro getUser()
+	// register the User type for getUser()
 	gob.Register(User{})
 
 	// read the password file
