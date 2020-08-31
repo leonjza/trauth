@@ -123,6 +123,10 @@ func parseEnv() error {
 		passwordFileLocation = "./htpasswd"
 	}
 
+	log.Print("configuration information")
+	log.Printf("port: %s; domain: %s; cookiePath: %s; cookieName: %s; passfile: %s",
+		serverPort, domain, cookiePath, cookieName, passwordFileLocation)
+
 	return nil
 }
 
