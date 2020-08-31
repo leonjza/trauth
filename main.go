@@ -15,6 +15,7 @@ import (
 
 var serverPort string
 var domain string
+var cookiePath string
 var cookieName string
 var passwordFileLocation string
 var passwordFile *htpasswd.File
@@ -98,6 +99,7 @@ func parseEnv() error {
 
 	serverPort = os.Getenv("TRAUTH_SERVER_PORT")
 	domain = os.Getenv("TRAUTH_DOMAIN")
+	cookiePath = os.Getenv("TRAUTH_COOKIE_PATH")
 	cookieName = os.Getenv("TRAUTH_COOKIE_NAME")
 	passwordFileLocation = os.Getenv("TRAUTH_PASSWORD_FILE_LOCATION")
 
@@ -107,6 +109,10 @@ func parseEnv() error {
 
 	if domain == "" {
 		return errors.New("empty domain")
+	}
+
+	if cookiePath == "" {
+		cookiePath = "/"
 	}
 
 	if cookieName == "" {
@@ -132,6 +138,7 @@ func main() {
 	store = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
 	store.Options = &sessions.Options{
 		Domain:   domain,
+		Path:     "/",
 		MaxAge:   ((60 * 60) * 24) * 365, // ((h) d) y
 		HttpOnly: true,
 	}
