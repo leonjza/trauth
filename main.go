@@ -145,7 +145,7 @@ func main() {
 	store = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
 	store.Options = &sessions.Options{
 		Domain:   domain,
-		Path:     "/",
+		Path:     cookiePath,
 		MaxAge:   ((60 * 60) * 24) * 365, // ((h) d) y
 		HttpOnly: true,
 	}
