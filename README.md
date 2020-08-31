@@ -14,7 +14,7 @@ Of course, you could compile from source or download from the [releases](https:/
 
 ## setup
 
-Depending on your setup, a few environment variables must be configured. For a docker-compose setup you would need `TRAUTH_DOMAIN` and `TRAUTH_PASSWORD_FILE_LOCATION`.
+Depending on your setup, a few environment variables must be configured. For a docker-compose setup you would need `TRAUTH_DOMAIN` and `TRAUTH_PASSWORD_FILE_LOCATION` at the very least.
 
 ```yml
 environment:
@@ -26,6 +26,7 @@ Other variables also exist. Those are:
 
 * `TRAUTH_SERVER_PORT` - The port the server should listen on. (Defaults to 8080)
 * `TRAUTH_DOMAIN` - The domain trauth should set the sso cookie for. This is usually scoped for the parent domain.
+* `TRAUTH_COOKIE_PATH` - The path used for the sso cookie. (Defaults to `/`)
 * `TRAUTH_COOKIE_NAME` - The name of the sso cookie. (Defaults to `trauth`)
 * `TRAUTH_PASSWORD_FILE_LOCATION` - The location for the `htpasswd` file. (Defaults to `./htpass`)
 
