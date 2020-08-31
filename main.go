@@ -40,7 +40,9 @@ func getUser(s *sessions.Session) User {
 func check(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := store.Get(r, cookieName)
-		log.Printf("unable to get session with error: %s", err)
+		if err != nil {
+			log.Printf("unable to get session with error: %s", err)
+		}
 		user := getUser(session)
 
 		if auth := user.Authenticated; !auth {
