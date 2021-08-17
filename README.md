@@ -1,6 +1,6 @@
 # trauth
 
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/leonjza/trauth)
+[![Docker build & Push](https://github.com/leonjza/trauth/actions/workflows/docker.yml/badge.svg)](https://github.com/leonjza/trauth/actions/workflows/docker.yml)
 
 A simple [ForwardAuth](https://docs.traefik.io/middlewares/forwardauth/) service for Traefik.
 
