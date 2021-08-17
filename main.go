@@ -13,13 +13,17 @@ import (
 	htpasswd "github.com/tg123/go-htpasswd"
 )
 
-var serverPort string
-var domain string
-var cookiePath string
-var cookieName string
-var passwordFileLocation string
-var passwordFile *htpasswd.File
-var store *sessions.CookieStore
+var (
+	serverPort           string
+	domain               string
+	cookiePath           string
+	cookieName           string
+	passwordFileLocation string
+	sessionKey           string
+
+	passwordFile *htpasswd.File
+	store        *sessions.CookieStore
+)
 
 // User holds a users account information
 type User struct {
@@ -105,6 +109,7 @@ func parseEnv() error {
 	cookiePath = os.Getenv("TRAUTH_COOKIE_PATH")
 	cookieName = os.Getenv("TRAUTH_COOKIE_NAME")
 	passwordFileLocation = os.Getenv("TRAUTH_PASSWORD_FILE_LOCATION")
+	sessionKey = os.Getenv("TRAUTH_SESSION_KEY")
 
 	if serverPort == "" {
 		serverPort = "8080"
@@ -126,6 +131,12 @@ func parseEnv() error {
 		passwordFileLocation = "./htpasswd"
 	}
 
+	if sessionKey == "" || len(sessionKey) != 32 {
+		log.Printf("warn: session key is empty or has invalid length. need a 32 char key")
+		log.Printf("warn: one has been generated for you, but you should change this!")
+		sessionKey = string(securecookie.GenerateRandomKey(32))
+	}
+
 	log.Print("configuration information")
 	log.Printf("port: %s; domain: %s; cookiePath: %s; cookieName: %s; passfile: %s",
 		serverPort, domain, cookiePath, cookieName, passwordFileLocation)
@@ -140,9 +151,7 @@ func main() {
 	}
 
 	log.Printf("initializing cookie keys and options...")
-	authKeyOne := securecookie.GenerateRandomKey(64)
-	encryptionKeyOne := securecookie.GenerateRandomKey(32)
-	store = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
+	store = sessions.NewCookieStore([]byte(sessionKey))
 	store.Options = &sessions.Options{
 		Domain:   domain,
 		Path:     cookiePath,

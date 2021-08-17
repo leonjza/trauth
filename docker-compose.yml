@@ -6,6 +6,12 @@ services:
     environment:
       - TRAUTH_DOMAIN=yourdomain.local
       - TRAUTH_PASSWORD_FILE_LOCATION=/config/htpass
+      - TRAUTH_SESSION_KEY=
+    # usually don't have to expose trauth to the world.
+    # in the case of traefik, the service will be reachable
+    # internally. in fact, users dont really know its there. :)
+    #ports:
+    #  - 8080:8080
     volumes:
       - ./htpass:/config/htpass
     restart: unless-stopped

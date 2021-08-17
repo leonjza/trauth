@@ -24,6 +24,7 @@ environment:
 
 Other variables also exist. Those are:
 
+* `TRAUTH_SESSION_KEY` - The authentication key used to validate cookie values. This value must be a 32 character, random string. Not setting this value (or using a value of the wrong size), will result in trauth generating a random key to use. A random value means everytime trauth starts, you'd need to re-authenticate. (Defaults to random value)
 * `TRAUTH_SERVER_PORT` - The port the server should listen on. (Defaults to 8080)
 * `TRAUTH_DOMAIN` - The domain trauth should set the sso cookie for. This is usually scoped for the parent domain.
 * `TRAUTH_COOKIE_PATH` - The path used for the sso cookie. (Defaults to `/`)
