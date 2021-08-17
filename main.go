@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -18,6 +19,8 @@ var (
 	domain               string
 	cookiePath           string
 	cookieName           string
+	cookieSecure         bool
+	cookieHttpOnly       bool
 	passwordFileLocation string
 	sessionKey           string
 	realm                string
@@ -104,15 +107,31 @@ func Ok(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseEnv() error {
-
 	serverPort = os.Getenv("TRAUTH_SERVER_PORT")
 	domain = os.Getenv("TRAUTH_DOMAIN")
 	realm = os.Getenv("TRAUTH_REALM")
+	sessionKey = os.Getenv("TRAUTH_SESSION_KEY")
+	passwordFileLocation = os.Getenv("TRAUTH_PASSWORD_FILE_LOCATION")
+
+	// cookie setup
 	cookiePath = os.Getenv("TRAUTH_COOKIE_PATH")
 	cookieName = os.Getenv("TRAUTH_COOKIE_NAME")
-	passwordFileLocation = os.Getenv("TRAUTH_PASSWORD_FILE_LOCATION")
-	sessionKey = os.Getenv("TRAUTH_SESSION_KEY")
+	cookieSecureEnv, err := strconv.ParseBool(os.Getenv("TRAUTH_COOKIE_SECURE"))
+	if err != nil {
+		log.Printf(`warn: TRAUTH_COOKIE_SECURE is empty or is invalid, defaulting to false`)
+		cookieSecure = false // default
+	} else {
+		cookieSecure = cookieSecureEnv
+	}
+	cookieHttpOnlyEnv, err := strconv.ParseBool(os.Getenv("TRAUTH_COOKIE_HTTPONLY"))
+	if err != nil {
+		log.Printf(`warn: TRAUTH_COOKIE_HTTPONLY is empty or is invalid, defaulting to false`)
+		cookieHttpOnly = false // default
+	} else {
+		cookieHttpOnly = cookieHttpOnlyEnv
+	}
 
+	// value parsing, setting defaults if needed
 	if serverPort == "" {
 		serverPort = "8080"
 	}
@@ -138,7 +157,7 @@ func parseEnv() error {
 	}
 
 	if sessionKey == "" || len(sessionKey) != 32 {
-		log.Printf("warn: session key is empty or has invalid length. need a 32 char key")
+		log.Printf("warn: TRAUTH_SESSION_KEY is empty or has invalid length. need a 32 char key")
 		log.Printf("warn: one has been generated for you, but you should change this!")
 		sessionKey = string(securecookie.GenerateRandomKey(32))
 	}
@@ -162,7 +181,8 @@ func main() {
 		Domain:   domain,
 		Path:     cookiePath,
 		MaxAge:   ((60 * 60) * 24) * 365, // ((h) d) y
-		HttpOnly: true,
+		HttpOnly: cookieHttpOnly,
+		Secure:   cookieSecure,
 	}
 
 	// register the User type for getUser()

@@ -30,6 +30,8 @@ Other variables also exist. Those are:
 * `TRAUTH_REALM` - The "realm" value to use. (Defaults to "Restricted")
 * `TRAUTH_COOKIE_PATH` - The path used for the sso cookie. (Defaults to `/`)
 * `TRAUTH_COOKIE_NAME` - The name of the sso cookie. (Defaults to `trauth`)
+* `TRAUTH_COOKIE_SECURE` - Set the `Secure` flag on the trauth cookie. (Defaults to false)
+* `TRAUTH_COOKIE_HTTPONLY` - Set the `HttpOnly` flag on the trauth cookie. (Defaults to false)
 * `TRAUTH_PASSWORD_FILE_LOCATION` - The location for the `htpasswd` file. (Defaults to `./htpass`)
 
 ## enabling for Traefik web services
