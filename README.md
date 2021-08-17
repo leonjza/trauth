@@ -27,6 +27,7 @@ Other variables also exist. Those are:
 * `TRAUTH_SESSION_KEY` - The authentication key used to validate cookie values. This value must be a 32 character, random string. Not setting this value (or using a value of the wrong size), will result in trauth generating a random key to use. A random value means everytime trauth starts, you'd need to re-authenticate. (Defaults to random value)
 * `TRAUTH_SERVER_PORT` - The port the server should listen on. (Defaults to 8080)
 * `TRAUTH_DOMAIN` - The domain trauth should set the sso cookie for. This is usually scoped for the parent domain.
+* `TRAUTH_REALM` - The "realm" value to use. (Defaults to "Restricted")
 * `TRAUTH_COOKIE_PATH` - The path used for the sso cookie. (Defaults to `/`)
 * `TRAUTH_COOKIE_NAME` - The name of the sso cookie. (Defaults to `trauth`)
 * `TRAUTH_PASSWORD_FILE_LOCATION` - The location for the `htpasswd` file. (Defaults to `./htpass`)

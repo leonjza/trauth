@@ -20,6 +20,7 @@ var (
 	cookieName           string
 	passwordFileLocation string
 	sessionKey           string
+	realm                string
 
 	passwordFile *htpasswd.File
 	store        *sessions.CookieStore
@@ -50,18 +51,18 @@ func check(next http.Handler) http.Handler {
 		user := getUser(session)
 
 		if auth := user.Authenticated; !auth {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, realm))
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
 				log.Printf("no basic auth creds provided from %s\n", r.RemoteAddr)
-				http.Error(w, http.StatusText(401), 401)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
 			if !passwordFile.Match(user, pass) {
 				log.Printf("invalid basic auth creds provided from %s\n", r.RemoteAddr)
-				http.Error(w, http.StatusText(401), 401)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
@@ -106,6 +107,7 @@ func parseEnv() error {
 
 	serverPort = os.Getenv("TRAUTH_SERVER_PORT")
 	domain = os.Getenv("TRAUTH_DOMAIN")
+	realm = os.Getenv("TRAUTH_REALM")
 	cookiePath = os.Getenv("TRAUTH_COOKIE_PATH")
 	cookieName = os.Getenv("TRAUTH_COOKIE_NAME")
 	passwordFileLocation = os.Getenv("TRAUTH_PASSWORD_FILE_LOCATION")
@@ -125,6 +127,10 @@ func parseEnv() error {
 
 	if cookieName == "" {
 		cookieName = "trauth"
+	}
+
+	if realm == "" {
+		realm = "Restricted"
 	}
 
 	if passwordFileLocation == "" {
