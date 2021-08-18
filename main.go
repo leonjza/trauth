@@ -53,18 +53,24 @@ func check(next http.Handler) http.Handler {
 		}
 		user := getUser(session)
 
+		// prefer the x-forwarded-for header for the remote address
+		remoteAddr := r.Header.Get(`X-Forwarded-For`)
+		if remoteAddr == `` {
+			remoteAddr = r.RemoteAddr
+		}
+
 		if auth := user.Authenticated; !auth {
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, realm))
 			user, pass, ok := r.BasicAuth()
 
 			if !ok {
-				log.Printf("no basic auth creds provided from %s\n", r.RemoteAddr)
+				log.Printf("no basic auth creds provided from %s\n", remoteAddr)
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
 			if !passwordFile.Match(user, pass) {
-				log.Printf("invalid basic auth creds provided from %s\n", r.RemoteAddr)
+				log.Printf("invalid basic auth creds provided from %s\n", remoteAddr)
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
@@ -83,7 +89,7 @@ func check(next http.Handler) http.Handler {
 				r.Header.Get("X-Forwarded-Port"),
 				r.Header.Get("X-Forwarded-URI"))
 			log.Printf("authenticated %s from %s using basic auth, redirecting to %s",
-				user, r.RemoteAddr, newDestination)
+				user, remoteAddr, newDestination)
 
 			http.Redirect(w, r, newDestination, http.StatusFound)
 			return
