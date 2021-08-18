@@ -39,7 +39,7 @@ Other variables also exist. Those are:
 To use it in Traefik you need to define a new middleware telling Traefik where the auth server is. For example:
 
 ```text
-- "traefik.http.middlewares.trauth.forwardauth.address=http://trauth.web:8080/"
+- "traefik.http.middlewares.trauth.forwardauth.address=http://trauth:8080/"
 ```
 
 Next, you simply need to add the middleware label to web services that should make use of it. For example:
