@@ -14,6 +14,8 @@ import (
 	htpasswd "github.com/tg123/go-htpasswd"
 )
 
+var VERSION = `1.3.1`
+
 var (
 	serverPort           string
 	domain               string
@@ -177,11 +179,13 @@ func parseEnv() error {
 
 func main() {
 
+	log.Printf(`booting trauth %s`, VERSION)
+
 	if err := parseEnv(); err != nil {
 		log.Fatalf("failed parsing environment: %s", err)
 	}
 
-	log.Printf("initializing cookie keys and options...")
+	log.Printf("initializing cookie keys and options")
 	store = sessions.NewCookieStore([]byte(sessionKey))
 	store.Options = &sessions.Options{
 		Domain:   domain,
@@ -195,14 +199,14 @@ func main() {
 	gob.Register(User{})
 
 	// read the password file
-	log.Printf("reading password file at %s...\n", passwordFileLocation)
+	log.Printf("reading password file at %s\n", passwordFileLocation)
 	var err error
 	passwordFile, err = htpasswd.New(passwordFileLocation, htpasswd.DefaultSystems, nil)
 	if err != nil {
 		log.Fatalf("failed to read the password file with error: %s\n", err)
 	}
 
-	log.Printf("starting up... authenticating for domain %s on port %s", domain, serverPort)
+	log.Printf("starting http service, authenticating for domain %s on port %s", domain, serverPort)
 
 	okHandler := http.HandlerFunc(Ok)
 	http.Handle("/", check(okHandler))
