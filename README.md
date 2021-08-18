@@ -34,7 +34,7 @@ Other variables also exist. Those are:
 * `TRAUTH_COOKIE_HTTPONLY` - Set the `HttpOnly` flag on the trauth cookie. (Defaults to false)
 * `TRAUTH_PASSWORD_FILE_LOCATION` - The location for the `htpasswd` file. (Defaults to `./htpass`)
 
-## enabling for Traefik web services
+## using with Traefik 2
 
 To use it in Traefik you need to define a new middleware telling Traefik where the auth server is. For example:
 
@@ -62,4 +62,21 @@ To add a new user to an existing `htpass` file, run:
 
 ```bash
 htpasswd -B htpass username2
+```
+
+## example run
+
+Below is example output from the `docker-compse` logs for the trauth service. Here you can see the service booted, and my authentication attempt logged when browsing to a protected service.
+
+```text
+trauth     | 2021/08/18 05:56:40 booting trauth 1.3.1
+trauth     | 2021/08/18 05:56:40 configuration information
+trauth     | 2021/08/18 05:56:40 port: 8080; domain: internal.mydomain.local; cookiePath: /; cookieName: trauth; passfile: /config/htpass
+trauth     | 2021/08/18 05:56:40 initializing cookie keys and options
+trauth     | 2021/08/18 05:56:40 reading password file at /config/htpass
+trauth     | 2021/08/18 05:56:40 starting http service, authenticating for domain internal.mydomain.local on port 8080
+trauth     | 2021/08/18 06:04:22 unable to get session with error: securecookie: the value is not valid
+trauth     | 2021/08/18 06:04:22 no basic auth creds provided from 192.168.0.10
+trauth     | 2021/08/18 06:04:43 unable to get session with error: securecookie: the value is not valid
+trauth     | 2021/08/18 06:04:43 authenticated leonjza from 192.168.0.10 using basic auth, redirecting to https://service.internal.mydomain.local:443/
 ```
