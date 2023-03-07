@@ -8,5 +8,5 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tg123/go-htpasswd v1.1.0
-	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 )
