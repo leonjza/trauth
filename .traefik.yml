@@ -1,5 +1,5 @@
 displayName: trauth
-summary: '🔑 A simple, cookie based Traefik middleware for HTTP Basic Single Signon'
+summary: '🔑 A simple, cookie based Traefik middleware plugin for HTTP Basic Single Sign-on'
 type: middleware
 import: github.com/leonjza/trauth
 
