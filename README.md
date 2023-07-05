@@ -4,7 +4,7 @@
 
 `trauth` reads [htpasswd](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) formatted data as a credentials database, prompting via HTTP basic auth. Once authenticated, a (configurable) cookie will be set such that any other services sharing that domain will also be authenticated.
 
-**Note:** This plugin changed significantly in the version 2 release from a ForwardAuth server to a middleware plugin. If you are interested in the ForwardAuth server then checkout the [latest version 1.3 tag](https://github.com/leonjza/trauth/tree/1.3.1).
+**Note:** This plugin changed significantly in the version 1.4.x release from a ForwardAuth server to a middleware plugin. If you are interested in the ForwardAuth server then checkout the [latest version 1.3 tag](https://github.com/leonjza/trauth/tree/1.3.1).
 
 ## usage
 
@@ -19,7 +19,7 @@ experimental:
   plugins:
     trauth:
       moduleName: github.com/leonjza/trauth
-      version: 2.0.0 # or whatever is the latest version
+      version: 1.4.0 # or whatever is the latest version
 ```
 
 Or, add it as labels to your `docker-compose.yml` (or similar).

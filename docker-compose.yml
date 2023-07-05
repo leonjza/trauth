@@ -14,7 +14,7 @@ services:
       - --providers.docker.exposedByDefault=false
       - --entryPoints.web.address=:80
       - --experimental.plugins.trauth.modulename=github.com/leonjza/trauth
-      - --experimental.plugins.trauth.version=v2.0.1
+      - --experimental.plugins.trauth.version=1.4.0
     labels:
       traefik.enable: true
       traefik.http.routers.dashboard.entrypoints: web
