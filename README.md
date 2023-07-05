@@ -19,7 +19,7 @@ experimental:
   plugins:
     trauth:
       moduleName: github.com/leonjza/trauth
-      version: 1.4.0 # or whatever is the latest version
+      version: v1.4.2 # or whatever is the latest version
 ```
 
 Or, add it as labels to your `docker-compose.yml` (or similar).
