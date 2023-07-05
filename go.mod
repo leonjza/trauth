@@ -1,4 +1,4 @@
-module github.com/leonjza/trauth
+module github.com/leonjza/trauth/v2
 
 go 1.20
 
