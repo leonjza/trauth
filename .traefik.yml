@@ -1,0 +1,15 @@
+displayName: trauth
+summary: '🔑 A simple, cookie based Traefik middleware for HTTP Basic Single Signon'
+type: middleware
+import: github.com/leonjza/trauth
+
+testData:
+  domain: localhost
+  realm: "Go away!"
+  cookiename: "auth-cookie"
+  cookiepath: "/"
+  cookiekey: "97zh8jwic74b5jcxc09nnxroewfzvn3p"
+  cookiesecure: false
+  cookiehttponly: false
+  users: |
+    admin:$2y$05$zX1mXagtitAaqafQ774WHu.KhF8EngAxSXuIv.NxzXkioQEQUw5HG

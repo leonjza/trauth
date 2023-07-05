@@ -1,56 +1,99 @@
 # trauth
 
-[![Docker build & Push](https://github.com/leonjza/trauth/actions/workflows/docker.yml/badge.svg)](https://github.com/leonjza/trauth/actions/workflows/docker.yml)
+A simple HTTP Basic SSO [plugin](https://plugins.traefik.io/plugins) middleware for Traefik.
 
-A simple [ForwardAuth](https://docs.traefik.io/middlewares/forwardauth/) service for Traefik.
-
-Unlike other ForwardAuth projects that enable neat OpenID / OAuth flows, `trauth` reads a simple `htpasswd` file as a credentials database, prompting via HTTP basic auth. This is perfect for private, isolated services served using Traefik needing a simple SSO solution.
+`trauth` reads [htpasswd](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) formatted data as a credentials database, prompting via HTTP basic auth. Once authenticated, a (configurable) cookie will be set such that any other services sharing that domain will also be authenticated.
 
 ## usage
 
-An example `docker-compose.yml` is included to show how to get it up and running. It assumes that `htpass` is mounted externally.
+As this is a middleware plugin, you need to do two things. Install the plugin and then configure the middleware.
 
-Of course, you could compile from source or download from the [releases](https://github.com/leonjza/trauth/releases) page and run outside of docker too.
+### installation
 
-## setup
-
-Depending on your setup, a few environment variables must be configured. For a docker-compose setup you would need `TRAUTH_DOMAIN` and `TRAUTH_PASSWORD_FILE_LOCATION` at the very least.
+A static configuration is needed. Either add it to your existing `traefik.yml` like this:
 
 ```yml
-environment:
-    - TRAUTH_DOMAIN=yourdomain.local
-    - TRAUTH_PASSWORD_FILE_LOCATION=/config/htpass
+experimental:
+  plugins:
+    trauth:
+      moduleName: github.com/leonjza/trauth
+      version: 2.0.0 # or whatever is the latest version
 ```
 
-Other variables also exist. Those are:
-
-* `TRAUTH_SESSION_KEY` - The authentication key used to validate cookie values. This value must be a 32 character, random string. Not setting this value (or using a value of the wrong size), will result in trauth generating a random key to use. A random value means everytime trauth starts, you'd need to re-authenticate. (Defaults to random value)
-* `TRAUTH_SERVER_PORT` - The port the server should listen on. (Defaults to 8080)
-* `TRAUTH_DOMAIN` - The domain trauth should set the sso cookie for. This is usually scoped for the parent domain.
-* `TRAUTH_REALM` - The "realm" value to use. (Defaults to "Restricted")
-* `TRAUTH_COOKIE_PATH` - The path used for the sso cookie. (Defaults to `/`)
-* `TRAUTH_COOKIE_NAME` - The name of the sso cookie. (Defaults to `trauth`)
-* `TRAUTH_COOKIE_SECURE` - Set the `Secure` flag on the trauth cookie. (Defaults to false)
-* `TRAUTH_COOKIE_HTTPONLY` - Set the `HttpOnly` flag on the trauth cookie. (Defaults to false)
-* `TRAUTH_PASSWORD_FILE_LOCATION` - The location for the `htpasswd` file. (Defaults to `./htpass`)
-
-## using with Traefik 2
-
-To use it in Traefik you need to define a new middleware telling Traefik where the auth server is. For example:
+Or, add it as labels to your `docker-compose.yml` (or similar).
 
 ```text
-- "traefik.http.middlewares.trauth.forwardauth.address=http://trauth:8080/"
+services:
+  traefik:
+    image: traefik
+    command:
+      - --experimental.plugins.trauth.moduleName=github.com/leonjza/trauth
+      - --experimental.plugins.trauth.version=2.0.0
 ```
 
-Next, you simply need to add the middleware label to web services that should make use of it. For example:
+### configuration
+
+As this plugin is middleware, you need to both attach the middleware to an appropriate `http.router`, as well as configure the middleware itself. Configuration will depend on how you use Traefik, but here are some examples.
+
+The available configuration options are as follows:
+
+| Option | Required | Default Value | Notes |
+|--------|----------|---------------|-------|
+| `domain` | True | | The domain name the authentication cookie will be scoped to. |
+| `realm` | False | `Restricted` | A message to display when prompting for credentials. Note, not all browsers show this to users anymore.  |
+| `cookiename` | False | `trauth` | A message to display when prompting for credentials. Note, not all browsers show this to users anymore. |
+| `cookiepath` | False | `/` | The name of the cookie to use for authentication. |
+| `cookiekey` | False | generated | The authentication key used to check cookie authenticity. **Note** See [cookiekey](#cookiekey) section below |
+| `cookieksecure` | False | `false` | Use the `secure` flag when setting the authentication cookie. |
+| `cookiekhttponly` | False | `false` | Use the `httponly` flag when setting the authentication cookie. |
+| `users` | False if `usersfile` is set | | A htpasswd formatted list of users to accept authentication for. If `usersfile` is not set, then this value must be set. |
+| `usersfile` | False if `users` is set | | A path to a htpasswd formatted file with a list of users to accept authentication for. If `users` is not set, then this value must be set. |
+
+#### cookiekey
+
+By default, trauth will generate a new, random value for `cookiekey` if one is not explicitly set, or is set to a value that is not 32 asci characters long. In many cases, this is ok, however, special consideration should be given to cases where this plugin is used in multiple places. By setting a static `cookiekey`, you garuantee that cookies across instances of the plugin can read the values within. If each instance of the plugin (where multiple instances will spawn if there are multiple unique definititions of the middleware) generated their own key, none will accept the cookie value set by another.
+
+For an example, have a look a the [docker-compose.yml](docker-compose.yml) file in this repository.
+
+#### configuration examples
+
+As dynamic configuration:
+
+```yml
+http:
+  routers:
+    myservice:
+      middlewares:
+        - sso
+    
+  middlewares:
+    sso:
+      plugin:
+        trauth:
+          domain: mydomain.local
+          cookiname: sso-cookie
+          users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
+```
+
+As labels:
 
 ```text
-- "traefik.http.routers.netdata.middlewares=trauth"
+traefik.http.routers.myservice.middlewares: sso
+traefik.http.middlewares.sso.plugin.trauth.domain: mydomain.local
+traefik.http.middlewares.sso.plugin.trauth.cookiename: sso-cookie
+# *note* the double $$ here to escape a single $
+traefik.http.middlewares.sso.plugin.trauth.users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
 ```
+
+## development
+
+An example `docker-compose.dev.yml` is included to show how to get this plugin up and running. No binary releases are nessesary as the stack is configured to mount this source repository in the appropriate location.
 
 ## adding users
 
-trauth uses a basic Apache htpasswd file. For detailed usage of `htpasswd`, please see [this](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) guide.
+trauth uses a basic Apache htpasswd file format. For detailed usage of `htpasswd`, please see [this](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) guide.
+
+Users can be specified using either ther `users` or `usersfile` configuration options. In both cases, the same format is needed. For the `users` option, the content of a well formatted htpasswd file can be pasted as the value of the key. For `usersfile`, the location of a file generated using the steps that follow need to be set.
 
 To add a new user in a new `htpass` file, using the Bcrypt hashing algorithm, run:
 
@@ -62,21 +105,4 @@ To add a new user to an existing `htpass` file, run:
 
 ```bash
 htpasswd -B htpass username2
-```
-
-## example run
-
-Below is example output from the `docker-compse` logs for the trauth service. Here you can see the service booted, and my authentication attempt logged when browsing to a protected service.
-
-```text
-trauth     | 2021/08/18 05:56:40 booting trauth 1.3.1
-trauth     | 2021/08/18 05:56:40 configuration information
-trauth     | 2021/08/18 05:56:40 port: 8080; domain: internal.mydomain.local; cookiePath: /; cookieName: trauth; passfile: /config/htpass
-trauth     | 2021/08/18 05:56:40 initializing cookie keys and options
-trauth     | 2021/08/18 05:56:40 reading password file at /config/htpass
-trauth     | 2021/08/18 05:56:40 starting http service, authenticating for domain internal.mydomain.local on port 8080
-trauth     | 2021/08/18 06:04:22 unable to get session with error: securecookie: the value is not valid
-trauth     | 2021/08/18 06:04:22 no basic auth creds provided from 192.168.0.10
-trauth     | 2021/08/18 06:04:43 unable to get session with error: securecookie: the value is not valid
-trauth     | 2021/08/18 06:04:43 authenticated leonjza from 192.168.0.10 using basic auth, redirecting to https://service.internal.mydomain.local:443/
 ```
