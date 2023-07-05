@@ -20,6 +20,9 @@ type Trauth struct {
 // New created a new plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 
+	log := NewLogger()
+	log.Printf("booting trauth version: %s", version)
+
 	// parse && validate the configuration we got
 	if err := config.Validate(); err != nil {
 		return nil, err

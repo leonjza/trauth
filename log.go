@@ -7,7 +7,7 @@ import (
 )
 
 func NewLogger() *log.Logger {
-	logger := log.New(io.Discard, "trauth ", log.LstdFlags|log.Lshortfile)
+	logger := log.New(io.Discard, "trauth ", log.LstdFlags)
 	logger.SetOutput(os.Stdout)
 
 	return logger
