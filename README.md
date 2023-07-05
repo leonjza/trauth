@@ -4,6 +4,8 @@
 
 `trauth` reads [htpasswd](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) formatted data as a credentials database, prompting via HTTP basic auth. Once authenticated, a (configurable) cookie will be set such that any other services sharing that domain will also be authenticated.
 
+**Note:** This plugin changed significantly in the version 2 release from a ForwardAuth server to a middleware plugin. If you are interested in the ForwardAuth server then checkout the [latest version 1.3 tag](https://github.com/leonjza/trauth/tree/1.3.1).
+
 ## usage
 
 As this is a middleware plugin, you need to do two things. Install the plugin and then configure the middleware.
@@ -84,6 +86,8 @@ traefik.http.middlewares.sso.plugin.trauth.cookiename: sso-cookie
 # *note* the double $$ here to escape a single $
 traefik.http.middlewares.sso.plugin.trauth.users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
 ```
+
+For more a more complete example, check out the [docker-compose.yml](docker-compose.yml) file in this repo.
 
 ## development
 
