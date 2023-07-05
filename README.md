@@ -30,7 +30,7 @@ services:
     image: traefik
     command:
       - --experimental.plugins.trauth.moduleName=github.com/leonjza/trauth
-      - --experimental.plugins.trauth.version=2.0.0
+      - --experimental.plugins.trauth.version=v1.4.2
 ```
 
 ### configuration
