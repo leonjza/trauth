@@ -68,7 +68,7 @@ func (c *Config) Validate() error {
 		Path:     c.CookiePath,
 		MaxAge:   ((60 * 60) * 24) * 365, // ((h) d) y
 		HttpOnly: c.CookieHttpOnly,
-		Secure:   c.CookieHttpOnly,
+		Secure:   c.CookieSecure,
 	}
 
 	// htpasswd setup
