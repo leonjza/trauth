@@ -1,5 +1,7 @@
 # trauth
 
+<img align="right" src="./images/logo.png" height="300" alt="beacon-pip-frame-proxy">
+
 🔑 A simple, cookie based Traefik middleware [plugin](https://plugins.traefik.io/plugins) for HTTP Basic Single Sign-on
 
 `trauth` reads [htpasswd](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) formatted data as a credentials database, prompting via HTTP basic auth. Once authenticated, a (configurable) cookie will be set such that any other services sharing that domain will also be authenticated.
