@@ -42,6 +42,14 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 
 func (t *Trauth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
+	if skipViaRule(t.config.Rules, req) {
+		t.logger.Printf("skipping auth due to exclusion rule matching the domain and path")
+		t.next.ServeHTTP(rw, req)
+
+		return
+	}
+
+	// continue with authentication checks
 	user := getUser(t.config, req)
 
 	if auth := user.Authenticated; !auth {

@@ -1,3 +1,4 @@
+---
 version: "3"
 
 # example docker-compose to demonstrate how to use trauth.
@@ -14,7 +15,7 @@ services:
       - --providers.docker.exposedByDefault=false
       - --entryPoints.web.address=:80
       - --experimental.plugins.trauth.modulename=github.com/leonjza/trauth
-      - --experimental.plugins.trauth.version=v1.4.2 # or whatever is the latest
+      - --experimental.plugins.trauth.version=v1.5.0 # or whatever the latest version is
     labels:
       traefik.enable: true
       traefik.http.routers.dashboard.entrypoints: web
@@ -46,6 +47,10 @@ services:
       traefik.http.middlewares.local-sso.plugin.trauth.cookiename: sso-cookie
       # *note* the double $$ here to escape a single $
       traefik.http.middlewares.local-sso.plugin.trauth.users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
+      # skip authentication for this service matching the domain and the /test/* or /another-test/* paths
+      "traefik.http.middlewares.local-sso.plugin.trauth.rules[0].domain": whoami-1.dev.local
+      "traefik.http.middlewares.local-sso.plugin.trauth.rules[0].excludes[0].exclude": ^/test/.*$
+      "traefik.http.middlewares.local-sso.plugin.trauth.rules[0].excludes[1].exclude": ^/another-test/.*$
 
   whoami-2:
     image: traefik/whoami

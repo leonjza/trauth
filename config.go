@@ -2,6 +2,7 @@ package trauth
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/securecookie"
@@ -15,6 +16,9 @@ type Config struct {
 	Domain    string `yaml:"domain"`
 	Users     string `yaml:"users"`
 	UsersFile string `yaml:"usersfile"`
+
+	// The rules engine, used to bypass auth
+	Rules []Rule `yaml:"rules"`
 
 	// Values with internal defaults
 	CookieName     string `yaml:"cookiename"`
@@ -71,9 +75,22 @@ func (c *Config) Validate() error {
 		Secure:   c.CookieSecure,
 	}
 
+	// process rules by compiling the provided regular expressions
+	for ridx, rule := range c.Rules {
+		for sidx, res := range rule.Excludes {
+			rex, err := regexp.Compile(res.Exclude)
+			if err != nil {
+				return fmt.Errorf("failed to compile rule regex '%s' for domain %s", res.Exclude, rule.Domain)
+			}
+
+			// assign the compiled regex to the struct
+			c.Rules[ridx].Excludes[sidx].Regex = rex
+		}
+	}
+
 	// htpasswd setup
 	if c.Users != "" && c.UsersFile != "" {
-		return fmt.Errorf("both users and usersfile is set for '%s'", c.Domain)
+		return fmt.Errorf("both users and usersfile are set for '%s'", c.Domain)
 	}
 
 	if c.Users != "" {
@@ -88,7 +105,7 @@ func (c *Config) Validate() error {
 		return nil
 	}
 
-	// finally, process a usersfile
+	// process a usersfile
 	if c.UsersFile == "" {
 		return fmt.Errorf("'%s' does not have a users / usersfile configuration", c.Domain)
 	}
