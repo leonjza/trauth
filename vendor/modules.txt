@@ -1,0 +1,20 @@
+# github.com/GehirnInc/crypt v0.0.0-20230320061759-8cc1b52080c5
+## explicit; go 1.19
+github.com/GehirnInc/crypt
+github.com/GehirnInc/crypt/common
+github.com/GehirnInc/crypt/internal
+github.com/GehirnInc/crypt/sha256_crypt
+github.com/GehirnInc/crypt/sha512_crypt
+# github.com/gorilla/securecookie v1.1.2
+## explicit; go 1.20
+github.com/gorilla/securecookie
+# github.com/gorilla/sessions v1.2.2
+## explicit; go 1.20
+github.com/gorilla/sessions
+# github.com/tg123/go-htpasswd v1.2.2
+## explicit; go 1.20
+github.com/tg123/go-htpasswd
+# golang.org/x/crypto v0.18.0
+## explicit; go 1.18
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
