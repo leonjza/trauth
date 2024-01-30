@@ -53,7 +53,8 @@ func (t *Trauth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	user := getUser(t.config, req)
 
 	if auth := user.Authenticated; !auth {
-		t.logger.Printf("not authenticated. prompting for credentials")
+		t.logger.Printf("unauthenticated request to %s%s, prompting for credentials", req.Host, req.URL.Path)
+
 		rw.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, t.config.Realm))
 		user, pass, ok := req.BasicAuth()
 
