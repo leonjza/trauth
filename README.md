@@ -48,8 +48,8 @@ The available configuration options are as follows:
 | `cookiename` | False | `trauth` | A message to display when prompting for credentials. Note, not all browsers show this to users anymore. |
 | `cookiepath` | False | `/` | The name of the cookie to use for authentication. |
 | `cookiekey` | False | generated | The authentication key used to check cookie authenticity. **Note** See [cookiekey](#cookiekey) section below |
-| `cookieksecure` | False | `false` | Use the `secure` flag when setting the authentication cookie. |
-| `cookiekhttponly` | False | `false` | Use the `httponly` flag when setting the authentication cookie. |
+| `cookiesecure` | False | `false` | Use the `secure` flag when setting the authentication cookie. |
+| `cookiehttponly` | False | `false` | Use the `httponly` flag when setting the authentication cookie. |
 | `users` | False if `usersfile` is set | | A htpasswd formatted list of users to accept authentication for. If `usersfile` is not set, then this value must be set. |
 | `usersfile` | False if `users` is set | | A path to a htpasswd formatted file with a list of users to accept authentication for. If `users` is not set, then this value must be set. |
 | `rules` | False | | A rules object that defines hostnames and paths where authentication requirements are skipped |
