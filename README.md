@@ -84,7 +84,7 @@ http:
       plugin:
         trauth:
           domain: mydomain.local
-          cookiname: sso-cookie
+          cookiename: sso-cookie
           users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
           rules:
           - domain: service.mydomain.local
