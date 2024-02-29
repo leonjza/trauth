@@ -2,8 +2,12 @@
 version: "3"
 
 # example docker-compose to demonstrate how to use trauth.
-# there are two implementation examples here. a global and local sso setup.
-# the credentials in both cases are admin:password
+# there are three implementation examples here. a global, local and mTLS sso setup.
+# the credentials in the basic auth cases are admin:password. for mTLS, you need
+# to generate the certificates for that. a toy environment could be configured with
+# something like pmc[1] which is assumed here with a CA in ./ca/ca.pem.
+#
+# [1] https://github.com/leonjza/pmc
 
 services:
   traefik:

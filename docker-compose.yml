@@ -4,6 +4,7 @@ version: "3"
 # example docker-compose to demonstrate how to use trauth.
 # there are two implementation examples here. a global and local sso setup.
 # the credentials in both cases are admin:password
+# for an mTLS example, check out the .dev docker-compose file.
 
 services:
   traefik:
