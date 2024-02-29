@@ -1,13 +1,19 @@
 package trauth
 
 import (
+	"net"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 type Exclude struct {
-	Exclude string `yaml:"exclude"`
-	Regex   *regexp.Regexp
+	Path  string `yaml:"path"`
+	IPNet string `yaml:"ipnet"`
+
+	// "computed" values from configuration parsing
+	regexPath *regexp.Regexp
+	ipNet     *net.IPNet
 }
 
 // Rule defines a trauth rule to exclude authentication
@@ -24,10 +30,22 @@ func skipViaRule(rules []Rule, req *http.Request) bool {
 			continue
 		}
 
-		// check paths in rules to see if a regexp matches the url path
-		for _, res := range rule.Excludes {
-			if res.Regex.MatchString(req.URL.Path) {
-				return true
+		source := net.ParseIP(strings.Split(req.RemoteAddr, ":")[0])
+
+		for _, exclude := range rule.Excludes {
+
+			// check source ip rules
+			if source != nil && exclude.ipNet != nil {
+				if exclude.ipNet.Contains(source) {
+					return true
+				}
+			}
+
+			// check path rules
+			if exclude.regexPath != nil {
+				if exclude.regexPath.MatchString(req.URL.Path) {
+					return true
+				}
 			}
 		}
 	}

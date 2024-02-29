@@ -13,13 +13,17 @@ services:
       - --log.level=DEBUG
       - --providers.docker=true
       - --providers.docker.exposedByDefault=false
+      - --providers.file.filename=/tls.yml
       - --entryPoints.web.address=:80
+      - --entryPoints.web-secure.address=:443
+      # local dev for this plugin
       - --experimental.localPlugins.trauth.moduleName=github.com/leonjza/trauth
     labels:
       traefik.enable: true
-      traefik.http.routers.dashboard.entrypoints: web
+      traefik.http.routers.dashboard.entrypoints: web, web-secure
       traefik.http.routers.dashboard.rule: Host(`traefik.dev.local`)
       traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.tls.certResolver: primary
       # configure trauth globally, and reuse the middelware on multiple services
       traefik.http.middlewares.global-sso.plugin.trauth.domain: dev.local
       traefik.http.middlewares.global-sso.plugin.trauth.cookiename: global-sso-cookie
@@ -28,10 +32,14 @@ services:
       traefik.http.middlewares.global-sso.plugin.trauth.usersfile: /htpass
     ports:
       - 80:80
+      - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./:/plugins-local/src/github.com/leonjza/trauth
       - ./example-htpass:/htpass
+      # https://doc.traefik.io/traefik/https/tls/#client-authentication-mtls
+      - ./tls.yml:/tls.yml
+      - ./ca:/ca
 
   whoami-1:
     image: traefik/whoami
@@ -48,9 +56,9 @@ services:
       # *note* the double $$ here to escape a single $
       traefik.http.middlewares.local-sso.plugin.trauth.users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
       # skip authentication for this service matching the domain and the /test/* or /another-test/* paths
-      traefik.http.middlewares.local-sso.plugin.trauth.rules[0].domain: whoami-1.dev.local
-      traefik.http.middlewares.local-sso.plugin.trauth.rules[0].excludes[0].exclude: ^/test/.*$
-      traefik.http.middlewares.local-sso.plugin.trauth.rules[0].excludes[1].exclude: ^/another-test/.*$
+      "traefik.http.middlewares.local-sso.plugin.trauth.rules[0].domain": whoami-1.dev.local
+      "traefik.http.middlewares.local-sso.plugin.trauth.rules[0].excludes[0].path": ^/test/.*$
+      "traefik.http.middlewares.local-sso.plugin.trauth.rules[0].excludes[1].path": ^/another-test/.*$
 
   whoami-2:
     image: traefik/whoami
@@ -61,3 +69,23 @@ services:
       traefik.http.routers.whoami-2.rule: Host(`whoami-2.dev.local`)
       traefik.http.routers.whoami-2.entrypoints: web
       traefik.http.routers.whoami-2.middlewares: global-sso
+
+  whoami-3:
+    image: traefik/whoami
+    depends_on:
+      - traefik
+    labels:
+      traefik.enable: true
+      traefik.http.routers.whoami-3.rule: Host(`whoami-3.dev.local`)
+      # allow only tls connections, we want to auth using mTLS afterall
+      traefik.http.routers.whoami-3.entrypoints: web-secure
+      traefik.http.routers.whoami-3.tls.certResolver: primary
+      # add tls options to ask for a client certificate
+      traefik.http.routers.whoami-3.tls.options: mtls@file
+      traefik.http.routers.whoami-3.middlewares: whoami3-sso
+      traefik.http.middlewares.whoami3-sso.plugin.trauth.domain: dev.local
+      traefik.http.middlewares.whoami3-sso.plugin.trauth.cookiename: whoami3-cookie
+      traefik.http.middlewares.whoami3-sso.plugin.trauth.capath: /ca/ca.pem
+      # skip authentication for this service for requests coming from a source network
+      "traefik.http.middlewares.whoami3-sso.plugin.trauth.rules[0].domain": whoami-3.dev.local
+      "traefik.http.middlewares.whoami3-sso.plugin.trauth.rules[0].excludes[0].ipnet": 192.168.166.0/24

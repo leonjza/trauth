@@ -1,7 +1,10 @@
 package trauth
 
 import (
+	"crypto/x509"
 	"fmt"
+	"net"
+	"os"
 	"regexp"
 	"strings"
 
@@ -28,6 +31,10 @@ type Config struct {
 	CookieKey      string `yaml:"cookiekey"`
 	Realm          string `yaml:"realm"`
 
+	// Cert authentication information
+	CAPath   string `yaml:"capath"`
+	CertPool *x509.CertPool
+
 	htpasswd    *htpasswd.File
 	cookieStore *sessions.CookieStore
 }
@@ -47,10 +54,12 @@ func CreateConfig() *Config {
 //
 // This function does a few things:
 //  1. Prepare the session store
-//  2. Prepare user credentials.
+//  2. Prepare user credentials / certificates for auth.
 //
-// There are two types of credentials you case set.
-// Users, and UsersFile. If Users is set, a buffered reader is
+// There are two types of credentials you case set. Certificates
+// or credentials in htpasswd format.
+//
+// For htpasswd, if Users is set a buffered reader is
 // configured to parse that information. If UsersFile is set,
 // a file read is configured.
 //
@@ -58,7 +67,7 @@ func CreateConfig() *Config {
 func (c *Config) Validate() error {
 
 	if c.Domain == "" {
-		return fmt.Errorf("a domain has not been configured")
+		return fmt.Errorf("a cookie domain has not been configured")
 	}
 
 	// cookiestore setup
@@ -76,15 +85,41 @@ func (c *Config) Validate() error {
 	}
 
 	// process rules by compiling the provided regular expressions
+	// and parsing Excluded IPNets
 	for ridx, rule := range c.Rules {
-		for sidx, res := range rule.Excludes {
-			rex, err := regexp.Compile(res.Exclude)
-			if err != nil {
-				return fmt.Errorf("failed to compile rule regex '%s' for domain %s", res.Exclude, rule.Domain)
+		for sidx, exclude := range rule.Excludes {
+			if exclude.IPNet != "" {
+				_, subnet, err := net.ParseCIDR(exclude.IPNet)
+				if err != nil {
+					return fmt.Errorf("failed to parse source ip range '%s' for domain %s with error %s",
+						exclude.IPNet, rule.Domain, err)
+				}
+
+				c.Rules[ridx].Excludes[sidx].ipNet = subnet
 			}
 
-			// assign the compiled regex to the struct
-			c.Rules[ridx].Excludes[sidx].Regex = rex
+			if exclude.Path != "" {
+				rex, err := regexp.Compile(exclude.Path)
+				if err != nil {
+					return fmt.Errorf("failed to compile rule regex '%s' for domain %s", exclude.Path, rule.Domain)
+				}
+
+				// assign the compiled regex to the struct
+				c.Rules[ridx].Excludes[sidx].regexPath = rex
+			}
+		}
+	}
+
+	// ca cert reading
+	if c.CAPath != "" {
+		cert, err := os.ReadFile(c.CAPath)
+		if err != nil {
+			return fmt.Errorf("failed to read ca_cert with error: %s", err)
+		}
+
+		c.CertPool = x509.NewCertPool()
+		if ok := c.CertPool.AppendCertsFromPEM(cert); !ok {
+			return fmt.Errorf("failed adding %s to certpool", c.CAPath)
 		}
 	}
 
@@ -106,17 +141,15 @@ func (c *Config) Validate() error {
 	}
 
 	// process a usersfile
-	if c.UsersFile == "" {
-		return fmt.Errorf("'%s' does not have a users / usersfile configuration", c.Domain)
-	}
+	if c.UsersFile != "" {
+		credentials, err := htpasswd.New(c.UsersFile, htpasswd.DefaultSystems, nil)
+		if err != nil {
+			return fmt.Errorf("failed to parse users configuration for domain '%s' with error: %s",
+				c.Domain, err)
+		}
 
-	credentials, err := htpasswd.New(c.UsersFile, htpasswd.DefaultSystems, nil)
-	if err != nil {
-		return fmt.Errorf("failed to parse users configuration for domain '%s' with error: %s",
-			c.Domain, err)
+		c.htpasswd = credentials
 	}
-
-	c.htpasswd = credentials
 
 	return nil
 }

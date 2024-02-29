@@ -1,0 +1,7 @@
+tls:
+  options:
+    mtls:
+      clientAuth:
+        # https://doc.traefik.io/traefik/https/tls/#client-authentication-mtls
+        # we dont "Require" which allows for basic auth fall-through
+        clientAuthType: RequestClientCert

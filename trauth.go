@@ -2,6 +2,7 @@ package trauth
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -42,42 +43,95 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 
 func (t *Trauth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
+	// TODO: build a session token so that exclusions are not processed in
+	// every request?
 	if skipViaRule(t.config.Rules, req) {
-		t.logger.Printf("skipping auth due to exclusion rule matching the domain and path")
+		t.logger.Printf("exlusion rule match for request from %s to %s%s", req.RemoteAddr, req.Host, req.URL.Path)
 		t.next.ServeHTTP(rw, req)
-
 		return
 	}
 
-	// continue with authentication checks
 	user := getUser(t.config, req)
 
 	if auth := user.Authenticated; !auth {
-		t.logger.Printf("unauthenticated request to %s%s, prompting for credentials", req.Host, req.URL.Path)
+		t.logger.Printf("unauthenticated request from %s to %s%s", req.RemoteAddr, req.Host, req.URL.Path)
 
-		rw.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, t.config.Realm))
-		user, pass, ok := req.BasicAuth()
-
-		if !ok {
-			http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		// check if we can try and do mTLS
+		if req.TLS != nil && len(req.TLS.PeerCertificates) > 0 {
+			t.tryMTLSAuth(rw, req)
 			return
 		}
 
-		if !t.config.htpasswd.Match(user, pass) {
-			http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-
-		if err := setUser(t.config, user, rw, req); err != nil {
-			t.logger.Fatalf("failed to save user session data with: %s\n", err)
-		}
-
-		t.logger.Printf("authenticated %s from %s, redirecting to %s",
-			user, req.RemoteAddr, req.URL.RequestURI())
-
-		http.Redirect(rw, req, req.URL.RequestURI(), http.StatusFound)
+		// fall back to basic authentication
+		t.tryBasicAuth(rw, req)
 		return
 	}
 
 	t.next.ServeHTTP(rw, req)
+}
+
+// tryMTLSAuth will check for any client certificates and validate them.
+func (t *Trauth) tryMTLSAuth(rw http.ResponseWriter, req *http.Request) bool {
+
+	// this is an important case. if Roots for Verify() is nil, it will use the
+	// system CA pool. avoid that.
+	if t.config.CertPool == nil {
+		return false
+	}
+
+	for _, cert := range req.TLS.PeerCertificates {
+		_, err := cert.Verify(x509.VerifyOptions{
+			Roots: t.config.CertPool,
+		})
+
+		// not resulting in an error means the certificate was signed with the configured CA
+		if err == nil {
+			if err := setUser(t.config, cert.Subject.CommonName, rw, req); err != nil {
+				t.logger.Fatalf("failed to save user session data with: %s\n", err)
+			}
+
+			t.logger.Printf("authenticated %s from %s using mTLS", cert.Subject.CommonName, req.RemoteAddr)
+			http.Redirect(rw, req, req.URL.RequestURI(), http.StatusFound)
+
+			return true
+		}
+	}
+
+	http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	return false
+}
+
+// tryBasicAuth with prompt for HTTP basic authentication credentials
+// and read the response to determine if valid credentials were given
+func (t *Trauth) tryBasicAuth(rw http.ResponseWriter, req *http.Request) {
+
+	// ensure htpassword is configured. as this is the last auth method we support,
+	// return an error http code in case we dont have an htpasswd instance (meaning there
+	// are no credentials configured to test to begin with)
+	if t.config.htpasswd == nil {
+		http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	rw.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, t.config.Realm))
+	user, pass, ok := req.BasicAuth()
+
+	if !ok {
+		http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	if !t.config.htpasswd.Match(user, pass) {
+		http.Error(rw, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	if err := setUser(t.config, user, rw, req); err != nil {
+		t.logger.Fatalf("failed to save user session data with: %s\n", err)
+	}
+
+	t.logger.Printf("authenticated %s from %s using basic auth, redirecting to %s",
+		user, req.RemoteAddr, req.URL.RequestURI())
+
+	http.Redirect(rw, req, req.URL.RequestURI(), http.StatusFound)
 }
