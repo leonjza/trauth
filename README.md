@@ -122,6 +122,8 @@ http:
           domain: mydomain.local
           cookiename: sso-cookie
           users: admin:$$2y$$05$$fVvJElbTaB/Cw9FevNc2keGo6sMRhY2e55..U.6zOsca3rQuuAU1e
+          # for mTLS (/ca/ca.pem needs to be readable to the traefik service in case of docker)
+          capath: /ca/ca.pem
           rules:
           - domain: service.mydomain.local
             path:
@@ -138,6 +140,7 @@ As labels:
 traefik.http.routers.myservice.middlewares: sso
 traefik.http.middlewares.sso.plugin.trauth.domain: mydomain.local
 traefik.http.middlewares.sso.plugin.trauth.cookiename: sso-cookie
+traefik.http.middlewares.sso.plugin.trauth.capath: /ca/ca.pem
 # optional rules
 traefik.http.middlewares.sso.plugin.trauth.rules[0].domain: service.mydomain.local
 traefik.http.middlewares.sso.plugin.trauth.rules[0].excludes[0].path: ^/api/v1/.*$
