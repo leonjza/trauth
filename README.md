@@ -79,8 +79,8 @@ The available configuration options are as follows:
 | `domain` | True | | The domain name the authentication cookie will be scoped to. |
 | `realm` | False | `Restricted` | A message to display when prompting for credentials. Note, not all browsers show this to users anymore.  |
 | `capath` | False |  | A path to a PEM encoded Certificate Authority to validate client provided certificates against. |
-| `cookiename` | False | `trauth` | A message to display when prompting for credentials. Note, not all browsers show this to users anymore. |
-| `cookiepath` | False | `/` | The name of the cookie to use for authentication. |
+| `cookiename` | False | `trauth` | The name of the cookie to use for authentication.  |
+| `cookiepath` | False | `/` | The path of the cookie to use for authentication. |
 | `cookiekey` | False | generated | The authentication key used to check cookie authenticity. **Note** See [cookiekey](#cookiekey) section below |
 | `cookiesecure` | False | `false` | Use the `secure` flag when setting the authentication cookie. |
 | `cookiehttponly` | False | `false` | Use the `httponly` flag when setting the authentication cookie. |
