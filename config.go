@@ -20,6 +20,9 @@ type Config struct {
 	Users     string `yaml:"users"`
 	UsersFile string `yaml:"usersfile"`
 
+	// Logging options
+	LogUnauthenticated bool `yaml:"logunauthenticated"`
+
 	// The rules engine, used to bypass auth
 	Rules []Rule `yaml:"rules"`
 

@@ -51,7 +51,9 @@ func (t *Trauth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	user := getUser(t.config, req)
 
 	if auth := user.Authenticated; !auth {
-		t.logger.Printf("unauthenticated request from %s to %s%s", req.RemoteAddr, req.Host, req.URL.Path)
+		if t.config.LogUnauthenticated {
+			t.logger.Printf("unauthenticated request from %s to %s%s", req.RemoteAddr, req.Host, req.URL.Path)
+		}
 
 		// check if we can try and do mTLS
 		if req.TLS != nil && len(req.TLS.PeerCertificates) > 0 {

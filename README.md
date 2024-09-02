@@ -21,7 +21,7 @@ experimental:
   plugins:
     trauth:
       moduleName: github.com/leonjza/trauth
-      version: v1.5.0 # or whatever the latest version is
+      version: v1.6.5 # or whatever the latest version is
 ```
 
 Or, add it as labels to your `docker-compose.yml` (or similar).
@@ -32,7 +32,7 @@ services:
     image: traefik
     command:
       - --experimental.plugins.trauth.moduleName=github.com/leonjza/trauth
-      - --experimental.plugins.trauth.version=v1.5.0
+      - --experimental.plugins.trauth.version=v1.6.5
 ```
 
 ### authentication types
@@ -78,6 +78,7 @@ The available configuration options are as follows:
 |--------|----------|---------------|-------|
 | `domain` | True | | The domain name the authentication cookie will be scoped to. |
 | `realm` | False | `Restricted` | A message to display when prompting for credentials. Note, not all browsers show this to users anymore.  |
+| `logunauthenticated` | False | `false` | Log unauthenticated requests. |
 | `capath` | False |  | A path to a PEM encoded Certificate Authority to validate client provided certificates against. |
 | `cookiename` | False | `trauth` | The name of the cookie to use for authentication.  |
 | `cookiepath` | False | `/` | The path of the cookie to use for authentication. |
