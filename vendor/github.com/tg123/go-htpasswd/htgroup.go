@@ -16,7 +16,7 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync/atomic"
+	"sync"
 )
 
 // Data structure for users and theirs groups (map).
@@ -26,7 +26,8 @@ type userGroupMap map[string][]string
 // A HTGroup encompasses an Apache-style group file.
 type HTGroup struct {
 	filePath   string
-	userGroups atomic.Pointer[userGroupMap]
+	mutex      sync.RWMutex
+	userGroups userGroupMap
 }
 
 // NewGroups creates a HTGroup from an Apache-style group file.
@@ -55,7 +56,10 @@ func NewGroupsFromReader(r io.Reader, bad BadLineHandler) (*HTGroup, error) {
 
 // ReloadGroups rereads the group file.
 func (htGroup *HTGroup) ReloadGroups(bad BadLineHandler) error {
-	file, err := os.Open(htGroup.filePath)
+	htGroup.mutex.Lock()
+	filename := htGroup.filePath
+	htGroup.mutex.Unlock()
+	file, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
@@ -79,7 +83,9 @@ func (htGroup *HTGroup) ReloadGroupsFromReader(r io.Reader, bad BadLineHandler) 
 		return fmt.Errorf("Error scanning group file: %s", scannerErr.Error())
 	}
 
-	htGroup.userGroups.Store(&userGroups)
+	htGroup.mutex.Lock()
+	htGroup.userGroups = userGroups
+	htGroup.mutex.Unlock()
 
 	return nil
 }
@@ -117,7 +123,9 @@ func (htGroup *HTGroup) IsUserInGroup(user string, group string) bool {
 // GetUserGroups reads all groups of a user.
 // Returns all groups as a string array or an empty array.
 func (htGroup *HTGroup) GetUserGroups(user string) []string {
-	groups := (*htGroup.userGroups.Load())[user]
+	htGroup.mutex.RLock()
+	groups := htGroup.userGroups[user]
+	htGroup.mutex.RUnlock()
 
 	if groups == nil {
 		return []string{}

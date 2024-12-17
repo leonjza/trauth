@@ -19,7 +19,7 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync/atomic"
+	"sync"
 )
 
 // An EncodedPasswd is created from the encoded password in a password file by a PasswdParser.
@@ -53,7 +53,8 @@ type BadLineHandler func(err error)
 // An File encompasses an Apache-style htpasswd file for HTTP Basic authentication
 type File struct {
 	filePath string
-	passwds  atomic.Pointer[passwdTable]
+	mutex    sync.RWMutex
+	passwds  passwdTable
 	parsers  []PasswdParser
 }
 
@@ -103,7 +104,9 @@ func NewFromReader(r io.Reader, parsers []PasswdParser, bad BadLineHandler) (*Fi
 // Match checks the username and password combination to see if it represents
 // a valid account from the htpassword file.
 func (bf *File) Match(username, password string) bool {
-	matcher, ok := (*bf.passwds.Load())[username]
+	bf.mutex.RLock()
+	matcher, ok := bf.passwds[username]
+	bf.mutex.RUnlock()
 
 	if ok && matcher.MatchesPassword(password) {
 		// we are good
@@ -151,7 +154,9 @@ func (bf *File) ReloadFromReader(r io.Reader, bad BadLineHandler) error {
 	}
 
 	// .. finally, safely swap in the new map
-	bf.passwds.Store(&newPasswdMap)
+	bf.mutex.Lock()
+	bf.passwds = newPasswdMap
+	bf.mutex.Unlock()
 
 	return nil
 }

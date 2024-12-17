@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/gorilla/securecookie v1.1.2
 	github.com/gorilla/sessions v1.3.0
-	github.com/tg123/go-htpasswd v1.2.3
+	github.com/tg123/go-htpasswd v1.2.2
 )
 
 require (
